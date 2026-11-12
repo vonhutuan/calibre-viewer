@@ -44,19 +44,19 @@
       <button id="retry-sign-in" class="primary" type="button" hidden>Sign in again</button>
     </main>
     <dialog id="details" aria-labelledby="book-title">
-      <form method="dialog"><button class="close" aria-label="Close book details">×</button></form>
-      <div class="book-heading">
+      <div class="book-preview">
+        <form method="dialog"><button class="close" aria-label="Close book details" autofocus>×</button></form>
         <div class="cover-slot">
           <img id="book-cover" class="book-cover" alt="" hidden>
         </div>
-        <div>
-          <h2 id="book-title"></h2>
-          <p id="book-authors"></p>
-          <p id="book-series" hidden></p>
-          <p id="book-tags" hidden></p>
-        </div>
       </div>
-      <div id="book-description" role="region" aria-label="Book description" tabindex="0" hidden></div>
+      <div id="book-info" role="region" aria-label="Book information" tabindex="0">
+        <h2 id="book-title"></h2>
+        <p id="book-authors"></p>
+        <p id="book-series" hidden></p>
+        <div id="book-description" hidden></div>
+        <p id="book-tags" hidden></p>
+      </div>
       <div id="formats" class="actions"></div>
       <p id="download-status" role="status"></p>
     </dialog>

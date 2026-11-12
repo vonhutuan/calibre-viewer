@@ -30,22 +30,23 @@ button:focus-visible, input:focus-visible, select:focus-visible { outline: 2px s
 .books li { border-bottom: 1px solid var(--line); }
 .book { display: flex; flex-direction: column; align-items: flex-start; gap: .25rem; width: 100%; padding: .7rem .5rem; background: transparent; border: 0; text-align: left; }
 .book:hover { background: #e9eddf; }
-.book-heading { display: flex; align-items: flex-start; gap: 1rem; margin: .75rem 0 1.25rem; }
-.book-heading > div { min-width: 0; overflow-wrap: anywhere; }
-.book-heading p { margin: .35rem 0 0; }
-.cover-slot { flex: none; width: clamp(4.5rem, 23vw, 8rem); width: min(clamp(4.5rem, 23vw, 8rem), 22dvh); aspect-ratio: 2 / 3; overflow: hidden; background: #e9eddf; border-radius: .25rem; }
+.book-preview { position: relative; display: grid; place-items: center; min-height: 2.75rem; margin-bottom: .85rem; }
+.cover-slot { width: 5.5rem; width: min(5.5rem, 16dvh); aspect-ratio: 2 / 3; overflow: hidden; background: #e9eddf; border-radius: .25rem; }
 .book-cover { display: block; width: 100%; height: 100%; object-fit: contain; }
-#book-tags { color: #4e574b; font-size: .9rem; }
-#book-description { flex: 0 1 auto; min-height: min(3rem, 10dvh); overflow-y: auto; overscroll-behavior: contain; white-space: pre-line; overflow-wrap: anywhere; line-height: 1.5; margin-bottom: .85rem; }
-#book-description:focus-visible { outline: 2px solid #42684f; outline-offset: -2px; }
+#book-info { flex: 0 1 auto; min-height: 0; overflow-y: auto; overscroll-behavior: contain; overflow-wrap: anywhere; line-height: 1.5; margin-bottom: .85rem; }
+#book-info:focus-visible { outline: 2px solid #42684f; outline-offset: -2px; }
+#book-title { font-size: clamp(1.2rem, 4vw, 1.5rem); line-height: 1.25; }
+#book-authors, #book-series { margin: .35rem 0 0; }
+#book-description { white-space: pre-line; margin-top: .85rem; }
+#book-tags { color: #4e574b; font-size: .9rem; margin: .85rem 0 0; }
 .book:hover .title { text-decoration: underline; }
 .title { font: 1.08rem/1.2 Georgia, serif; overflow-wrap: anywhere; }
 .authors { color: #4e574b; font-size: .8rem; overflow-wrap: anywhere; }
 dialog { width: min(34rem, calc(100% - 2rem)); max-height: calc(100% - 2rem); max-height: calc(100dvh - 2rem); padding: clamp(.85rem, 4vw, 1.5rem); border: 1px solid var(--line); border-radius: .75rem; background: #fffdf7; color: inherit; }
 dialog[open] { display: flex; flex-direction: column; }
-dialog[open] > :not(#book-description) { flex-shrink: 0; }
+dialog[open] > :not(#book-info) { flex-shrink: 0; }
 dialog::backdrop { background: #17271ecc; }
-dialog form { display: flex; justify-content: flex-end; }
+dialog form { position: absolute; inset: 0 0 auto auto; }
 .close { font-size: 1.25rem; line-height: 1; }
 #status:empty, #download-status:empty { display: none; }
 @media (max-width: 32rem) {

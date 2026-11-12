@@ -182,7 +182,7 @@ function showBook(book) {
     return button;
   }));
   elements.details.showModal();
-  elements['book-description'].scrollTop = 0;
+  elements['book-info'].scrollTop = 0;
 }
 
 async function downloadBook(book, format, button) {
