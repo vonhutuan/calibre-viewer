@@ -47,3 +47,18 @@ test('requests fresh links with a token and fetches file bytes without one', asy
   assert.equal(calls[1][1].headers, undefined);
   await assert.rejects(drive.downloadUrl('folder', 'missing'), error => error instanceof DriveError && error.status === 404);
 });
+
+test('calls the default fetch with its global receiver', async () => {
+  const originalFetch = globalThis.fetch;
+  globalThis.fetch = function () {
+    assert.ok(this === globalThis, 'Browser fetch requires the global receiver');
+    return Promise.resolve(Response.json({ id: 'folder', folder: {} }));
+  };
+  try {
+    const drive = new OneDrive(async () => 'token');
+    const folder = await drive.item('root', 'Calibre Library', 'id,folder');
+    assert.equal(folder.id, 'folder');
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
+});

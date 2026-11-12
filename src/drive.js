@@ -20,7 +20,7 @@ export function itemEndpoint(folderId, path) {
 }
 
 export class OneDrive {
-  constructor(getToken, request = fetch) {
+  constructor(getToken, request = (url, options) => globalThis.fetch(url, options)) {
     this.getToken = getToken;
     this.request = request;
   }
