@@ -1,13 +1,13 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { DatabaseSync } from 'node:sqlite';
-import { readCatalog, matchesBook } from '../src/catalog.js';
+import { readCatalog, matchesBook, sortBooks } from '../src/catalog.js';
 import { itemEndpoint, OneDrive, DriveError } from '../src/drive.js';
 
 test('reads Calibre metadata with ordered authors, cover flags and original format names', () => {
   const db = new DatabaseSync(':memory:');
   db.exec(`
-    CREATE TABLE books (id, title, sort, path, has_cover, series_index);
+    CREATE TABLE books (id, title, sort, path, has_cover, series_index, author_sort, timestamp, pubdate);
     CREATE TABLE authors (id, name);
     CREATE TABLE books_authors_link (id, book, author);
     CREATE TABLE data (book, name, format);
@@ -16,7 +16,9 @@ test('reads Calibre metadata with ordered authors, cover flags and original form
     CREATE TABLE books_series_link (book, series);
     CREATE TABLE tags (id, name);
     CREATE TABLE books_tags_link (book, tag);
-    INSERT INTO books VALUES (1,'Café','Cafe','René/Café (1)',1,2),(2,'Empty','Empty','Empty (2)',0,1);
+    INSERT INTO books VALUES
+      (1,'Café','Cafe','René/Café (1)',1,2,'Zulu','2020-01-01 00:00:00+00:00','2000-01-01'),
+      (2,'Empty','Empty','Empty (2)',0,1,'Alpha','2021-01-01 00:00:00+00:00','0101-01-01');
     INSERT INTO comments VALUES (1,'<p>A description.</p>');
     INSERT INTO series VALUES (3,'Coffee Stories');
     INSERT INTO books_series_link VALUES (1,3);
@@ -38,6 +40,10 @@ test('reads Calibre metadata with ordered authors, cover flags and original form
   assert.equal(empty.hasCover, false);
   assert.equal(empty.description, null);
   assert.deepEqual(empty.tags, []);
+  assert.equal(empty.published, null);
+  assert.deepEqual(sortBooks([book, empty], 'author'), [empty, book]);
+  assert.deepEqual(sortBooks([book, empty], 'added'), [empty, book]);
+  assert.deepEqual(sortBooks([empty, book], 'published'), [book, empty]);
   assert.ok(matchesBook(book, 'cafe joao'));
   assert.equal(matchesBook(book, 'unrelated'), false);
   db.close();

@@ -6,17 +6,34 @@ function normalize(text) {
   return text.normalize('NFKD').replace(/\p{M}/gu, '').toLowerCase();
 }
 
+const authorCollator = new Intl.Collator(undefined, { sensitivity: 'base' });
+
+export function sortBooks(books, order) {
+  if (order === 'author') {
+    return [...books].sort((a, b) => authorCollator.compare(
+      a.authorSort || a.authors[0] || '',
+      b.authorSort || b.authors[0] || '',
+    ));
+  }
+  if (order === 'added' || order === 'published') {
+    return [...books].sort((a, b) => (b[order] ?? -Infinity) - (a[order] ?? -Infinity));
+  }
+  return books;
+}
+
 export function readCatalog(db) {
   const books = new Map();
-  for (const [id, title, path, hasCover, description, series, seriesIndex] of rows(db, `
-    SELECT books.id, title, path, has_cover, comments.text, series.name, series_index
+  for (const [id, title, path, hasCover, description, series, seriesIndex, authorSort, added, published] of rows(db, `
+    SELECT books.id, title, path, has_cover, comments.text, series.name, series_index,
+           author_sort, CAST(strftime('%s', timestamp) AS INTEGER),
+           CASE WHEN date(pubdate) != '0101-01-01' THEN CAST(strftime('%s', pubdate) AS INTEGER) END
     FROM books
     LEFT JOIN comments ON comments.book = books.id
     LEFT JOIN books_series_link AS link ON link.book = books.id
     LEFT JOIN series ON series.id = link.series
     ORDER BY books.sort COLLATE NOCASE, books.id
   `)) {
-    books.set(id, { title, path, hasCover: Boolean(hasCover), description, series, seriesIndex, authors: [], formats: [], tags: [] });
+    books.set(id, { title, path, hasCover: Boolean(hasCover), description, series, seriesIndex, authorSort, added, published, authors: [], formats: [], tags: [] });
   }
   for (const [id, name] of rows(db, 'SELECT link.book, tags.name FROM books_tags_link AS link JOIN tags ON tags.id = link.tag ORDER BY tags.name COLLATE NOCASE')) {
     books.get(id)?.tags.push(name);

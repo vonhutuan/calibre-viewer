@@ -15,16 +15,16 @@ header { display: flex; align-items: center; justify-content: space-between; fle
 h1 { font-size: clamp(2rem, 6vw, 3.6rem); font-weight: 500; letter-spacing: -0.055em; margin: 0; }
 h2 { font-size: clamp(1.6rem, 5vw, 2.5rem); font-weight: 500; margin: 0; }
 p { line-height: 1.5; }
-button, input, .toolbar { font-family: system-ui, sans-serif; }
+button, input, select, .toolbar { font-family: system-ui, sans-serif; }
 button { border: 1px solid var(--line); border-radius: .4rem; background: #fffdf7; color: var(--ink); padding: .65rem .9rem; font-size: .92rem; cursor: pointer; }
 button:disabled { opacity: .55; cursor: default; }
-button:focus-visible, input:focus-visible { outline: 2px solid #42684f; outline-offset: 3px; }
+button:focus-visible, input:focus-visible, select:focus-visible { outline: 2px solid #42684f; outline-offset: 3px; }
 .primary { background: var(--ink); color: #fffdf7; border-color: var(--ink); }
 .welcome { margin-top: 3rem; padding: clamp(1.2rem, 5vw, 3rem); background: #e9eddf; border-radius: .75rem; }
 .actions { display: flex; flex-wrap: wrap; gap: .55rem; }
-.toolbar { display: grid; grid-template-columns: minmax(0, 30rem) 1fr; gap: .5rem 1rem; align-items: center; margin: 1.5rem 0; }
-.toolbar label { grid-column: 1 / -1; font-size: .9rem; }
-.toolbar input { width: 100%; border: 1px solid var(--line); border-radius: .4rem; padding: .7rem .85rem; font-size: 1rem; background: #fffdf7; color: inherit; }
+.toolbar { display: grid; grid-template-columns: minmax(0, 30rem) minmax(0, 16rem); gap: .5rem 1rem; align-items: end; margin: 1.5rem 0; }
+.toolbar label { display: grid; gap: .4rem; font-size: .9rem; }
+.toolbar input, .toolbar select { width: 100%; border: 1px solid var(--line); border-radius: .4rem; padding: .7rem .85rem; font-size: 1rem; background: #fffdf7; color: inherit; }
 #count { margin: 0; color: #4e574b; font-size: .88rem; }
 .books { list-style: none; margin: 0; padding: 0; border-top: 1px solid var(--line); }
 .books li { border-bottom: 1px solid var(--line); }

@@ -1,7 +1,7 @@
 import { BrowserCacheLocation, InteractionRequiredAuthError, PublicClientApplication } from '@azure/msal-browser';
 import initSqlJs from 'sql.js';
 import wasmUrl from 'sql.js/dist/sql-wasm.wasm?url';
-import { readCatalog, matchesBook } from './catalog.js';
+import { readCatalog, matchesBook, sortBooks } from './catalog.js';
 import { DriveError, OneDrive } from './drive.js';
 import './style.css';
 
@@ -121,7 +121,7 @@ async function showCover(book, image, signal) {
 function renderBooks() {
   const matches = books.filter(book => matchesBook(book, elements.search.value));
   const items = document.createDocumentFragment();
-  for (const book of matches) {
+  for (const book of sortBooks(matches, elements['sort-order'].value)) {
     const item = elements['book-card'].content.firstElementChild.cloneNode(true);
     item.querySelector('.title').textContent = book.title;
     item.querySelector('.authors').textContent = book.authors.join(', ');
@@ -247,6 +247,7 @@ elements['sign-in'].addEventListener('click', signIn);
 elements['retry-sign-in'].addEventListener('click', signIn);
 elements.refresh.addEventListener('click', loadLibrary);
 elements.search.addEventListener('input', renderBooks);
+elements['sort-order'].addEventListener('change', renderBooks);
 elements.details.addEventListener('close', () => {
   if (!elements.details.open) coverController?.abort();
 });
