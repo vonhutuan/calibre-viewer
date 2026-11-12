@@ -1,5 +1,6 @@
 const graph = 'https://graph.microsoft.com/v1.0/me/drive';
 const downloadProperty = '@microsoft.graph.downloadUrl';
+const alternateDownloadProperty = '@content.downloadUrl';
 
 export class DriveError extends Error {
   constructor(status, operation) {
@@ -27,8 +28,12 @@ export class OneDrive {
   }
 
   async item(folderId, path, properties, signal) {
-    const url = new URL(itemEndpoint(folderId, path));
-    url.searchParams.set('$select', properties);
+    return this.itemMetadata(itemEndpoint(folderId, path), properties, signal);
+  }
+
+  async itemMetadata(endpoint, properties, signal) {
+    const url = new URL(endpoint);
+    if (properties) url.searchParams.set('$select', properties);
     const token = await this.getToken();
     let response;
     try {
@@ -47,10 +52,16 @@ export class OneDrive {
 
   async downloadUrl(folderId, path, signal) {
     const item = await this.item(folderId, path, `id,${downloadProperty}`, signal);
-    if (!item[downloadProperty]) {
+    let link = item[downloadProperty] || item[alternateDownloadProperty];
+    if (!link) {
+      const endpoint = item.id ? `${graph}/items/${encodeURIComponent(item.id)}` : itemEndpoint(folderId, path);
+      const metadata = await this.itemMetadata(endpoint, undefined, signal);
+      link = metadata[downloadProperty] || metadata[alternateDownloadProperty];
+    }
+    if (!link) {
       throw new DriveError(undefined, 'missing download link');
     }
-    const url = new URL(item[downloadProperty]);
+    const url = new URL(link);
     if (url.protocol !== 'https:') throw new Error('Invalid OneDrive download link.');
     return url.href;
   }

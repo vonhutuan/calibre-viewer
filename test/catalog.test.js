@@ -62,3 +62,17 @@ test('calls the default fetch with its global receiver', async () => {
     globalThis.fetch = originalFetch;
   }
 });
+
+test('retries without a field filter when the OneDrive download annotation is omitted', async () => {
+  const requests = [];
+  const drive = new OneDrive(async () => 'token', async url => {
+    requests.push(new URL(url));
+    return requests.length === 1
+      ? Response.json({ id: 'file!123' })
+      : Response.json({ '@content.downloadUrl': 'https://files.example/metadata.db' });
+  });
+  assert.equal(await drive.downloadUrl('folder', 'metadata.db'), 'https://files.example/metadata.db');
+  assert.equal(requests.length, 2);
+  assert.match(requests[1].pathname, /\/items\/file!123$/);
+  assert.equal(requests[1].search, '');
+});
