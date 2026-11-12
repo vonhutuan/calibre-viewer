@@ -26,6 +26,7 @@ button:focus-visible, input:focus-visible { outline: 2px solid #42684f; outline-
 .toolbar label { grid-column: 1 / -1; font-size: .9rem; }
 .toolbar input { width: 100%; border: 1px solid var(--line); border-radius: .4rem; padding: .7rem .85rem; font-size: 1rem; background: #fffdf7; color: inherit; }
 #count { margin: 0; color: #4e574b; font-size: .88rem; }
+.pagination { display: flex; align-items: center; justify-content: center; gap: .75rem; margin-top: 1.5rem; font: .9rem system-ui, sans-serif; }
 .books { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 8.5rem), 1fr)); gap: 1.3rem 1rem; }
 .book { display: flex; flex-direction: column; align-items: stretch; gap: .4rem; width: 100%; padding: 0; background: transparent; border: 0; text-align: left; }
 .cover { position: relative; display: grid; place-items: center; aspect-ratio: 2 / 3; overflow: hidden; background: #dce5d3; border-radius: .35rem; box-shadow: 0 .2rem .5rem #26342b22; }

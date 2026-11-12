@@ -12,14 +12,18 @@ const clientId = import.meta.env.VITE_MICROSOFT_CLIENT_ID?.trim();
 const folderPath = import.meta.env.VITE_CALIBRE_FOLDER?.trim() || 'Calibre Library';
 const redirectUri = new URL(location.pathname, location.origin).href;
 const scopes = ['Files.Read'];
+const pageSize = 24;
 const objectUrls = new Map();
 let auth;
 let account;
 let sqlite;
 let controller;
 let coverObserver;
+let coverController;
 let folderId;
 let books = [];
+let page = 1;
+let pageCount = 1;
 let currentBook;
 
 function showError(error, target, fallback) {
@@ -31,10 +35,12 @@ function showError(error, target, fallback) {
 
 function clearLibrary() {
   controller?.abort();
+  coverController?.abort();
   coverObserver?.disconnect();
   for (const url of objectUrls.values()) URL.revokeObjectURL(url);
   objectUrls.clear();
   books = [];
+  page = 1;
   folderId = undefined;
   currentBook = undefined;
   elements.details.close();
@@ -113,17 +119,24 @@ async function showCover(book, image, signal) {
 }
 
 function renderBooks() {
+  coverController?.abort();
   coverObserver?.disconnect();
-  const signal = controller.signal;
-  const visible = books.filter(book => matchesBook(book, elements.search.value));
+  coverController = new AbortController();
+  const { signal } = coverController;
+  const matches = books.filter(book => matchesBook(book, elements.search.value));
+  pageCount = Math.max(1, Math.ceil(matches.length / pageSize));
+  page = Math.min(page, pageCount);
+  const offset = (page - 1) * pageSize;
+  const visible = matches.slice(offset, offset + pageSize);
   const covers = new Map();
   coverObserver = new IntersectionObserver((entries, observer) => {
+    if (signal.aborted) return;
     for (const entry of entries) {
       if (!entry.isIntersecting) continue;
       observer.unobserve(entry.target);
       void showCover(covers.get(entry.target), entry.target.querySelector('img'), signal);
     }
-  }, { rootMargin: '160px' });
+  }, { rootMargin: '80px' });
 
   const items = visible.map(book => {
     const item = elements['book-card'].content.firstElementChild.cloneNode(true);
@@ -137,8 +150,21 @@ function renderBooks() {
   elements.books.replaceChildren(...items);
   for (const item of covers.keys()) coverObserver.observe(item);
   elements.count.textContent = visible.length
-    ? `${visible.length} of ${books.length} books`
+    ? `${offset + 1}–${offset + visible.length} of ${matches.length} books`
     : (books.length ? 'No matching books' : 'No books in this library');
+  elements.pagination.hidden = pageCount === 1;
+  elements['page-number'].textContent = `Page ${page} of ${pageCount}`;
+  elements['previous-page'].disabled = page === 1;
+  elements['next-page'].disabled = page === pageCount;
+}
+
+function changePage(direction) {
+  const nextPage = page + direction;
+  if (nextPage < 1 || nextPage > pageCount) return;
+  page = nextPage;
+  renderBooks();
+  elements.library.scrollIntoView({ block: 'start' });
+  elements.books.querySelector('button')?.focus({ preventScroll: true });
 }
 
 function showBook(book) {
@@ -229,7 +255,12 @@ async function start() {
 elements['sign-in'].addEventListener('click', signIn);
 elements['retry-sign-in'].addEventListener('click', signIn);
 elements.refresh.addEventListener('click', loadLibrary);
-elements.search.addEventListener('input', renderBooks);
+elements.search.addEventListener('input', () => {
+  page = 1;
+  renderBooks();
+});
+elements['previous-page'].addEventListener('click', () => changePage(-1));
+elements['next-page'].addEventListener('click', () => changePage(1));
 elements['sign-out'].addEventListener('click', async () => {
   clearLibrary();
   elements.search.value = '';
