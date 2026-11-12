@@ -8,8 +8,18 @@ function normalize(text) {
 
 export function readCatalog(db) {
   const books = new Map();
-  for (const [id, title, path, hasCover] of rows(db, 'SELECT id, title, path, has_cover FROM books ORDER BY sort COLLATE NOCASE, id')) {
-    books.set(id, { title, path, hasCover: Boolean(hasCover), authors: [], formats: [] });
+  for (const [id, title, path, hasCover, description, series, seriesIndex] of rows(db, `
+    SELECT books.id, title, path, has_cover, comments.text, series.name, series_index
+    FROM books
+    LEFT JOIN comments ON comments.book = books.id
+    LEFT JOIN books_series_link AS link ON link.book = books.id
+    LEFT JOIN series ON series.id = link.series
+    ORDER BY books.sort COLLATE NOCASE, books.id
+  `)) {
+    books.set(id, { title, path, hasCover: Boolean(hasCover), description, series, seriesIndex, authors: [], formats: [], tags: [] });
+  }
+  for (const [id, name] of rows(db, 'SELECT link.book, tags.name FROM books_tags_link AS link JOIN tags ON tags.id = link.tag ORDER BY tags.name COLLATE NOCASE')) {
+    books.get(id)?.tags.push(name);
   }
   for (const [id, name] of rows(db, 'SELECT link.book, authors.name FROM books_authors_link AS link JOIN authors ON authors.id = link.author ORDER BY link.id')) {
     books.get(id)?.authors.push(name);

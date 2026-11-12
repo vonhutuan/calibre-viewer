@@ -12,18 +12,14 @@ const clientId = import.meta.env.VITE_MICROSOFT_CLIENT_ID?.trim();
 const folderPath = import.meta.env.VITE_CALIBRE_FOLDER?.trim() || 'Calibre Library';
 const redirectUri = new URL(location.pathname, location.origin).href;
 const scopes = ['Files.Read'];
-const pageSize = 24;
 const objectUrls = new Map();
 let auth;
 let account;
 let sqlite;
 let controller;
-let coverObserver;
 let coverController;
 let folderId;
 let books = [];
-let page = 1;
-let pageCount = 1;
 let currentBook;
 
 function showError(error, target, fallback) {
@@ -36,16 +32,20 @@ function showError(error, target, fallback) {
 function clearLibrary() {
   controller?.abort();
   coverController?.abort();
-  coverObserver?.disconnect();
   for (const url of objectUrls.values()) URL.revokeObjectURL(url);
   objectUrls.clear();
   books = [];
-  page = 1;
   folderId = undefined;
   currentBook = undefined;
   elements.details.close();
   elements['book-title'].textContent = '';
   elements['book-authors'].textContent = '';
+  for (const id of ['book-description', 'book-series', 'book-tags']) {
+    elements[id].textContent = '';
+    elements[id].hidden = true;
+  }
+  elements['book-cover'].removeAttribute('src');
+  elements['book-cover'].hidden = true;
   elements['download-status'].textContent = '';
   elements.formats.replaceChildren();
   elements.books.replaceChildren();
@@ -114,61 +114,52 @@ async function showCover(book, image, signal) {
     image.src = url;
     image.hidden = false;
   } catch {
-    // The cover title remains visible if the image is unavailable.
+    // The book details stay available if the image fails to load.
   }
 }
 
 function renderBooks() {
-  coverController?.abort();
-  coverObserver?.disconnect();
-  coverController = new AbortController();
-  const { signal } = coverController;
   const matches = books.filter(book => matchesBook(book, elements.search.value));
-  pageCount = Math.max(1, Math.ceil(matches.length / pageSize));
-  page = Math.min(page, pageCount);
-  const offset = (page - 1) * pageSize;
-  const visible = matches.slice(offset, offset + pageSize);
-  const covers = new Map();
-  coverObserver = new IntersectionObserver((entries, observer) => {
-    if (signal.aborted) return;
-    for (const entry of entries) {
-      if (!entry.isIntersecting) continue;
-      observer.unobserve(entry.target);
-      void showCover(covers.get(entry.target), entry.target.querySelector('img'), signal);
-    }
-  }, { rootMargin: '80px' });
-
-  const items = visible.map(book => {
+  const items = document.createDocumentFragment();
+  for (const book of matches) {
     const item = elements['book-card'].content.firstElementChild.cloneNode(true);
     item.querySelector('.title').textContent = book.title;
-    item.querySelector('.cover-title').textContent = book.title;
     item.querySelector('.authors').textContent = book.authors.join(', ');
     item.querySelector('button').addEventListener('click', () => showBook(book));
-    if (book.hasCover) covers.set(item, book);
-    return item;
-  });
-  elements.books.replaceChildren(...items);
-  for (const item of covers.keys()) coverObserver.observe(item);
-  elements.count.textContent = visible.length
-    ? `${offset + 1}–${offset + visible.length} of ${matches.length} books`
+    items.append(item);
+  }
+  elements.books.replaceChildren(items);
+  elements.count.textContent = matches.length
+    ? new Intl.NumberFormat().format(matches.length) + (matches.length === 1 ? ' book' : ' books')
     : (books.length ? 'No matching books' : 'No books in this library');
-  elements.pagination.hidden = pageCount === 1;
-  elements['page-number'].textContent = `Page ${page} of ${pageCount}`;
-  elements['previous-page'].disabled = page === 1;
-  elements['next-page'].disabled = page === pageCount;
 }
 
-function changePage(direction) {
-  const nextPage = page + direction;
-  if (nextPage < 1 || nextPage > pageCount) return;
-  page = nextPage;
-  renderBooks();
-  elements.library.scrollIntoView({ block: 'start' });
-  elements.books.querySelector('button')?.focus({ preventScroll: true });
+function descriptionText(html) {
+  const template = document.createElement('template');
+  template.innerHTML = html ?? '';
+  template.content.querySelectorAll('script, style').forEach(element => element.remove());
+  template.content.querySelectorAll('br, p, div, li, h1, h2, h3, blockquote')
+    .forEach(element => element.after('\n'));
+  return template.content.textContent.trim();
 }
 
 function showBook(book) {
   currentBook = book;
+  coverController?.abort();
+  coverController = new AbortController();
+  const image = elements['book-cover'];
+  image.hidden = true;
+  image.removeAttribute('src');
+  if (book.hasCover) void showCover(book, image, coverController.signal);
+  const details = {
+    'book-series': book.series ? `${book.series} · Book ${book.seriesIndex}` : '',
+    'book-tags': book.tags.join(', '),
+    'book-description': descriptionText(book.description),
+  };
+  for (const [id, text] of Object.entries(details)) {
+    elements[id].textContent = text;
+    elements[id].hidden = !text;
+  }
   elements['book-title'].textContent = book.title;
   elements['book-authors'].textContent = book.authors.join(', ');
   elements['download-status'].textContent = book.formats.length ? '' : 'No ebook files are listed for this book.';
@@ -255,12 +246,10 @@ async function start() {
 elements['sign-in'].addEventListener('click', signIn);
 elements['retry-sign-in'].addEventListener('click', signIn);
 elements.refresh.addEventListener('click', loadLibrary);
-elements.search.addEventListener('input', () => {
-  page = 1;
-  renderBooks();
+elements.search.addEventListener('input', renderBooks);
+elements.details.addEventListener('close', () => {
+  if (!elements.details.open) coverController?.abort();
 });
-elements['previous-page'].addEventListener('click', () => changePage(-1));
-elements['next-page'].addEventListener('click', () => changePage(1));
 elements['sign-out'].addEventListener('click', async () => {
   clearLibrary();
   elements.search.value = '';
