@@ -35,10 +35,12 @@ button:focus-visible, input:focus-visible, select:focus-visible { outline: 2px s
 .book-cover { display: block; width: 100%; height: 100%; object-fit: contain; }
 #book-info { flex: 0 1 auto; min-height: 0; overflow-y: auto; overscroll-behavior: contain; overflow-wrap: anywhere; line-height: 1.5; margin-bottom: .85rem; }
 #book-info:focus-visible { outline: 2px solid #42684f; outline-offset: -2px; }
-#book-title { font-size: clamp(1.2rem, 4vw, 1.5rem); line-height: 1.25; }
-#book-authors, #book-series { margin: .35rem 0 0; }
-#book-description { white-space: pre-line; margin-top: .85rem; }
-#book-tags { color: #4e574b; font-size: .9rem; margin: .85rem 0 0; }
+#book-title { font-size: clamp(1.2rem, 4vw, 1.5rem); font-weight: 700; line-height: 1.25; }
+#book-authors, #book-series, #book-tags { font-family: system-ui, sans-serif; color: #4e574b; }
+#book-authors { font-size: .875rem; font-weight: 600; margin: .4rem 0 0; }
+#book-series { font-size: .8125rem; margin: .25rem 0 0; }
+#book-description { white-space: pre-line; line-height: 1.6; margin-top: 1rem; padding-top: .9rem; border-top: 1px solid var(--line); }
+#book-tags { font-size: .8125rem; margin: 1rem 0 0; }
 .book:hover .title { text-decoration: underline; }
 .title { font: 1.08rem/1.2 Georgia, serif; overflow-wrap: anywhere; }
 .authors { color: #4e574b; font-size: .8rem; overflow-wrap: anywhere; }
