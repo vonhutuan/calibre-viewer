@@ -59,13 +59,17 @@ async function loadLibrary() {
   elements.status.textContent = 'Loading your library…';
   elements['retry-sign-in'].hidden = true;
   elements.refresh.disabled = true;
+  let step = 'finding the Calibre folder';
   try {
     const folder = await drive.item('root', folderPath, 'id,folder', signal);
     if (!folder.folder || !folder.id) throw new Error('Expected a library folder.');
+    step = 'fetching metadata.db';
     const response = await drive.file(folder.id, 'metadata.db', signal);
     const bytes = new Uint8Array(await response.arrayBuffer());
+    step = 'starting the SQLite reader';
     sqlite ??= await initSqlJs({ locateFile: () => wasmUrl });
     if (signal.aborted) return;
+    step = 'reading metadata.db';
     const db = new sqlite.Database(bytes);
     try {
       books = readCatalog(db);
@@ -73,14 +77,14 @@ async function loadLibrary() {
       db.close();
     }
     folderId = folder.id;
+    step = 'displaying the catalog';
     elements.library.hidden = false;
     elements.status.textContent = '';
     renderBooks();
   } catch (error) {
     if (!signal.aborted) {
-      const message = error.status === 404
-        ? `Could not find ${folderPath}/metadata.db in this OneDrive.`
-        : 'Could not load your library. Try Refresh.';
+      const details = [error.operation, error.status && `HTTP ${error.status}`].filter(Boolean).join(', ');
+      const message = `Could not load your library while ${step}${details ? ` (${details})` : ''}. Try Refresh.`;
       showError(error, elements.status, message);
     }
   } finally {

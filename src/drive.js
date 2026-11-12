@@ -2,9 +2,10 @@ const graph = 'https://graph.microsoft.com/v1.0/me/drive';
 const downloadProperty = '@microsoft.graph.downloadUrl';
 
 export class DriveError extends Error {
-  constructor(status) {
-    super(`OneDrive returned HTTP ${status}.`);
+  constructor(status, operation) {
+    super(status ? `OneDrive returned HTTP ${status} during ${operation}.` : `OneDrive: ${operation}.`);
     this.status = status;
+    this.operation = operation;
   }
 }
 
@@ -29,17 +30,26 @@ export class OneDrive {
     const url = new URL(itemEndpoint(folderId, path));
     url.searchParams.set('$select', properties);
     const token = await this.getToken();
-    const response = await this.request(url.href, {
-      headers: { Authorization: `Bearer ${token}` },
-      cache: 'no-store',
-      signal,
-    });
-    if (!response.ok) throw new DriveError(response.status);
+    let response;
+    try {
+      response = await this.request(url.href, {
+        headers: { Authorization: `Bearer ${token}` },
+        cache: 'no-store',
+        signal,
+      });
+    } catch (error) {
+      if (signal?.aborted) throw error;
+      throw new DriveError(undefined, 'Graph connection');
+    }
+    if (!response.ok) throw new DriveError(response.status, 'file lookup');
     return response.json();
   }
 
   async downloadUrl(folderId, path, signal) {
     const item = await this.item(folderId, path, `id,${downloadProperty}`, signal);
+    if (!item[downloadProperty]) {
+      throw new DriveError(undefined, 'missing download link');
+    }
     const url = new URL(item[downloadProperty]);
     if (url.protocol !== 'https:') throw new Error('Invalid OneDrive download link.');
     return url.href;
@@ -47,8 +57,14 @@ export class OneDrive {
 
   async file(folderId, path, signal) {
     const url = await this.downloadUrl(folderId, path, signal);
-    const response = await this.request(url, { cache: 'no-store', signal, referrerPolicy: 'no-referrer' });
-    if (!response.ok) throw new DriveError(response.status);
+    let response;
+    try {
+      response = await this.request(url, { cache: 'no-store', signal, referrerPolicy: 'no-referrer' });
+    } catch (error) {
+      if (signal?.aborted) throw error;
+      throw new DriveError(undefined, 'download connection');
+    }
+    if (!response.ok) throw new DriveError(response.status, 'file download');
     return response;
   }
 }
