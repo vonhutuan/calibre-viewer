@@ -1,0 +1,15 @@
+{
+  "id": "./",
+  "name": "Calibre Library",
+  "short_name": "Calibre",
+  "description": "Browse and download books from your Calibre library on OneDrive.",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#f7f4ec",
+  "theme_color": "#f7f4ec",
+  "icons": [
+    { "src": "icons/calibre-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icons/calibre-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" }
+  ]
+}
