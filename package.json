@@ -1,0 +1,17 @@
+{
+  "name": "calibre-viewer",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build --base ./",
+    "test": "node --test"
+  },
+  "dependencies": {
+    "@azure/msal-browser": "^4.0.0",
+    "sql.js": "^1.13.0"
+  },
+  "devDependencies": {
+    "vite": "^7.0.0"
+  }
+}
