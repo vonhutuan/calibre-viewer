@@ -1,4 +1,4 @@
-import { BrowserCacheLocation, InteractionRequiredAuthError, PublicClientApplication } from '@azure/msal-browser';
+import { BrowserCacheLocation, EventType, InteractionRequiredAuthError, PublicClientApplication } from '@azure/msal-browser';
 import initSqlJs from 'sql.js';
 import wasmUrl from 'sql.js/dist/sql-wasm.wasm?url';
 import { readCatalog, matchesBook, sortBooks } from './catalog.js';
@@ -51,6 +51,16 @@ function clearLibrary() {
   elements.books.replaceChildren();
   elements.count.textContent = '';
   elements.library.hidden = true;
+}
+
+function showSignedOut() {
+  account = undefined;
+  clearLibrary();
+  elements.search.value = '';
+  elements.actions.hidden = true;
+  elements.welcome.hidden = false;
+  elements['retry-sign-in'].hidden = true;
+  elements.status.textContent = '';
 }
 
 const drive = new OneDrive(async () => {
@@ -223,10 +233,16 @@ async function start() {
   }
   auth = new PublicClientApplication({
     auth: { clientId, authority: 'https://login.microsoftonline.com/consumers', redirectUri },
-    cache: { cacheLocation: BrowserCacheLocation.SessionStorage },
+    cache: { cacheLocation: BrowserCacheLocation.LocalStorage },
   });
   try {
     await auth.initialize();
+    auth.enableAccountStorageEvents();
+    auth.addEventCallback(event => {
+      if (account && event.payload?.homeAccountId === account.homeAccountId) {
+        showSignedOut();
+      }
+    }, [EventType.ACCOUNT_REMOVED]);
     const result = await auth.handleRedirectPromise();
     const accounts = auth.getAllAccounts();
     account = result?.account ?? auth.getActiveAccount() ?? (accounts.length === 1 ? accounts[0] : null);
@@ -252,16 +268,12 @@ elements.details.addEventListener('close', () => {
   if (!elements.details.open) coverController?.abort();
 });
 elements['sign-out'].addEventListener('click', async () => {
-  clearLibrary();
-  elements.search.value = '';
-  elements.actions.hidden = true;
-  elements.welcome.hidden = false;
-  elements['retry-sign-in'].hidden = true;
-  elements.status.textContent = '';
+  const signedInAccount = account;
+  showSignedOut();
   try {
-    await auth.logoutRedirect({ account, postLogoutRedirectUri: redirectUri });
+    await auth.logoutRedirect({ account: signedInAccount, postLogoutRedirectUri: redirectUri });
   } catch {
-    elements.status.textContent = 'Microsoft sign-out could not finish. Close this tab to clear the viewer session.';
+    elements.status.textContent = 'Microsoft sign-out could not finish. Clear this site’s browser data if you need to remove the saved session.';
   }
 });
 void start();

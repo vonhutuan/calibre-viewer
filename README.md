@@ -21,4 +21,4 @@ npm test
 npm run dev
 ```
 
-Open the exact localhost URL registered with Microsoft. `npm run build` produces the deployable static files in `dist/`. The browser uses a per-tab token cache and reads the catalog again on refresh. OneDrive is accessed with read-only permissions.
+Open the exact localhost URL registered with Microsoft. `npm run build` produces the deployable static files in `dist/`. The viewer reuses Microsoft sign-in across tabs in the same browser profile and reads the catalog again on refresh. OneDrive is accessed with read-only permissions.
